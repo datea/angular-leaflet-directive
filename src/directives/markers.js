@@ -17,7 +17,7 @@ angular.module("leaflet-directive").directive('markers', function ($log, $rootSc
                 addMarkerToGroup = leafletMarkersHelpers.addMarkerToGroupExtended,
                 bindMarkerEvents = leafletEvents.bindMarkerEvents,
                 createMarker = leafletMarkersHelpers.createMarker,
-                clusterOptions = isDefined(attrs.clusterOptions) ? attrs.clusterOptions : {};
+                clusterOptions = isDefined(leafletScope.clusterOptions) ? leafletScope.clusterOptions : {};
 
             mapController.getMap().then(function(map) {
                 var leafletMarkers = {},
