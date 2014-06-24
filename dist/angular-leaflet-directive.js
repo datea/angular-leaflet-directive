@@ -724,7 +724,7 @@
           '?layers'
         ],
         link: function (scope, element, attrs, controller) {
-          var mapController = controller[0], Helpers = leafletHelpers, isDefined = leafletHelpers.isDefined, isString = leafletHelpers.isString, leafletScope = mapController.getLeafletScope(), deleteMarker = leafletMarkersHelpers.deleteMarker, addMarkerWatcher = leafletMarkersHelpers.addMarkerWatcher, listenMarkerEvents = leafletMarkersHelpers.listenMarkerEvents, addMarkerToGroup = leafletMarkersHelpers.addMarkerToGroup, bindMarkerEvents = leafletEvents.bindMarkerEvents, createMarker = leafletMarkersHelpers.createMarker;
+          var mapController = controller[0], Helpers = leafletHelpers, isDefined = leafletHelpers.isDefined, isString = leafletHelpers.isString, leafletScope = mapController.getLeafletScope(), deleteMarker = leafletMarkersHelpers.deleteMarker, addMarkerWatcher = leafletMarkersHelpers.addMarkerWatcher, listenMarkerEvents = leafletMarkersHelpers.listenMarkerEvents, addMarkerToGroup = leafletMarkersHelpers.addMarkerToGroupExtended, bindMarkerEvents = leafletEvents.bindMarkerEvents, createMarker = leafletMarkersHelpers.createMarker, clusterOptions = isDefined(attrs.clusterOptions) ? attrs.clusterOptions : {};
           mapController.getMap().then(function (map) {
             var leafletMarkers = {}, getLayers;
             // If the layers attribute is used, we must wait until the layers are created
@@ -767,7 +767,7 @@
                     }
                     // Add the marker to a cluster group if needed
                     if (isDefined(markerData.group)) {
-                      addMarkerToGroup(marker, markerData.group, map);
+                      addMarkerToGroup(marker, markerData.group, map, clusterOptions);
                     }
                     // Show label if defined
                     if (Helpers.LabelPlugin.isLoaded() && isDefined(markerData.label) && isDefined(markerData.label.message)) {
@@ -2630,6 +2630,28 @@
             map.addLayer(groups[groupName]);
           }
           groups[groupName].addLayer(marker);
+        },
+        addMarkerToGroupExtended: function (marker, groupName, map, clusterOptions) {
+          if (!isString(groupName)) {
+            $log.error('[AngularJS - Leaflet] The marker group you have specified is invalid.');
+            return;
+          }
+          if (!MarkerClusterPlugin.isLoaded()) {
+            $log.error('[AngularJS - Leaflet] The MarkerCluster plugin is not loaded.');
+            return;
+          }
+          if (!isDefined(groups[groupName])) {
+            if (!isDefined(clusterOptions)) {
+              clusterOptions = {};
+            }
+            groups[groupName] = new L.MarkerClusterGroup(clusterOptions);
+            map.addLayer(groups[groupName]);
+          }
+          groups[groupName].addLayer(marker);
+        },
+        resetCurrentGroups: function () {
+          groups = {};
+          console.log('RESET CURRENT GROUPS', groups);
         },
         listenMarkerEvents: function (marker, markerData, leafletScope) {
           marker.on('popupopen', function () {

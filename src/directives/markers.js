@@ -14,9 +14,10 @@ angular.module("leaflet-directive").directive('markers', function ($log, $rootSc
                 deleteMarker = leafletMarkersHelpers.deleteMarker,
                 addMarkerWatcher = leafletMarkersHelpers.addMarkerWatcher,
                 listenMarkerEvents = leafletMarkersHelpers.listenMarkerEvents,
-                addMarkerToGroup = leafletMarkersHelpers.addMarkerToGroup,
+                addMarkerToGroup = leafletMarkersHelpers.addMarkerToGroupExtended,
                 bindMarkerEvents = leafletEvents.bindMarkerEvents,
-                createMarker = leafletMarkersHelpers.createMarker;
+                createMarker = leafletMarkersHelpers.createMarker,
+                clusterOptions = isDefined(attrs.clusterOptions) ? attrs.clusterOptions : {};
 
             mapController.getMap().then(function(map) {
                 var leafletMarkers = {},
@@ -67,7 +68,7 @@ angular.module("leaflet-directive").directive('markers', function ($log, $rootSc
 
                                 // Add the marker to a cluster group if needed
                                 if (isDefined(markerData.group)) {
-                                    addMarkerToGroup(marker, markerData.group, map);
+                                    addMarkerToGroup(marker, markerData.group, map, clusterOptions);
                                 }
 
                                 // Show label if defined
