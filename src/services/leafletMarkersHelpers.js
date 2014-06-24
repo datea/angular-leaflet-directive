@@ -124,6 +124,30 @@ angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($
             groups[groupName].addLayer(marker);
         },
 
+        addMarkerToGroupExtended: function(marker, groupName, map, clusterOptions) {
+            if (!isString(groupName)) {
+                $log.error('[AngularJS - Leaflet] The marker group you have specified is invalid.');
+                return;
+            }
+
+            if (!MarkerClusterPlugin.isLoaded()) {
+                $log.error("[AngularJS - Leaflet] The MarkerCluster plugin is not loaded.");
+                return;
+            }
+            if (!isDefined(groups[groupName])) {
+                if (!isDefined(clusterOptions)) { clusterOptions = {};}
+                groups[groupName] = new L.MarkerClusterGroup(clusterOptions);
+                map.addLayer(groups[groupName]);
+            }
+            groups[groupName].addLayer(marker);
+        },
+
+
+        resetCurrentGroups: function () {
+                    groups = {};
+                    console.log( 'RESET CURRENT GROUPS', groups );
+        },
+
         listenMarkerEvents: function(marker, markerData, leafletScope) {
             marker.on("popupopen", function(/* event */) {
                 safeApply(leafletScope, function() {
