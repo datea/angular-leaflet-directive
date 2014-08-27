@@ -151,7 +151,6 @@ angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($
 
         resetCurrentGroups: function () {
             groups = {};
-            //console.log( 'RESET CURRENT GROUPS', groups );
         },
 
         listenMarkerEvents: function(marker, markerData, leafletScope) {
