@@ -2651,8 +2651,7 @@
           groups[groupName].addLayer(marker);
         },
         resetCurrentGroups: function () {
-          groups = {};
-          console.log('RESET CURRENT GROUPS', groups);
+          groups = {};  //console.log( 'RESET CURRENT GROUPS', groups );
         },
         listenMarkerEvents: function (marker, markerData, leafletScope) {
           marker.on('popupopen', function () {
