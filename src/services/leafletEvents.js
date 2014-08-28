@@ -11,7 +11,7 @@ angular.module("leaflet-directive").factory('leafletEvents', function ($rootScop
             'mousedown',
             'mouseover',
             'mouseout',
-            'contextmenu'
+            'contextmenu',
         ];
     };
 
@@ -104,6 +104,38 @@ angular.module("leaflet-directive").factory('leafletEvents', function ($rootScop
         };
     };
 
+    // HACK TO GET CLUSTER EVENTS LISTENED
+    var genDispatchClusterEvent = function(scope, eventName, logic, cluster, groupName) {
+        return function(e) {
+            // Put together broadcast name
+            var broadcastName = 'leafletDirectiveCluster.' + eventName;
+
+            // Safely broadcast the event
+            safeApply(scope, function(scope) {
+                if (logic === "emit") {
+                    scope.$emit(broadcastName, {
+                        leafletEvent : e,
+                        cluster: cluster,
+                        groupName: groupName
+                    });
+                } else if (logic === "broadcast") {
+                    $rootScope.$broadcast(broadcastName, {
+                        leafletEvent : e,
+                        cluster : cluster,
+                        groupName: groupName
+                    });
+                }
+            });
+        };
+    };
+
+    var _getAvailableClusterEvents = function() {
+        return [
+            'clusterclick',
+            'clustermouseover'
+        ];
+    };
+
     var _getAvailableMarkerEvents = function() {
         return [
             'click',
@@ -118,7 +150,7 @@ angular.module("leaflet-directive").factory('leafletEvents', function ($rootScop
             'move',
             'remove',
             'popupopen',
-            'popupclose'
+            'popupclose',
         ];
     };
 
@@ -423,8 +455,15 @@ angular.module("leaflet-directive").factory('leafletEvents', function ($rootScop
             if (Helpers.LabelPlugin.isLoaded() && isDefined(path.label)) {
                 genLabelEvents(leafletScope, logic, path, name);
             }
-        }
+        },
 
+        bindClusterEvents : function (leafletScope, logic, cluster, groupName) {
+            var clusterEvents = _getAvailableClusterEvents();
+            for (var i = 0; i < clusterEvents.length; i++) {
+                var eventName = clusterEvents[i];
+                cluster.on(eventName, genDispatchClusterEvent(leafletScope, eventName, logic, cluster, groupName));
+            }
+        }
     };
 });
 

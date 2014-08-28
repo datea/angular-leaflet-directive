@@ -768,7 +768,7 @@
                     }
                     // Add the marker to a cluster group if needed
                     if (isDefined(markerData.group)) {
-                      addMarkerToGroup(marker, markerData.group, map, clusterOptions);
+                      addMarkerToGroup(marker, markerData.group, map, clusterOptions, leafletScope);
                     }
                     // Show label if defined
                     if (Helpers.LabelPlugin.isLoaded() && isDefined(markerData.label) && isDefined(markerData.label.message)) {
@@ -1491,6 +1491,35 @@
           });
         };
       };
+      // HACK TO GET CLUSTER EVENTS LISTENED
+      var genDispatchClusterEvent = function (scope, eventName, logic, cluster, groupName) {
+        return function (e) {
+          // Put together broadcast name
+          var broadcastName = 'leafletDirectiveCluster.' + eventName;
+          // Safely broadcast the event
+          safeApply(scope, function (scope) {
+            if (logic === 'emit') {
+              scope.$emit(broadcastName, {
+                leafletEvent: e,
+                cluster: cluster,
+                groupName: groupName
+              });
+            } else if (logic === 'broadcast') {
+              $rootScope.$broadcast(broadcastName, {
+                leafletEvent: e,
+                cluster: cluster,
+                groupName: groupName
+              });
+            }
+          });
+        };
+      };
+      var _getAvailableClusterEvents = function () {
+        return [
+          'clusterclick',
+          'clustermouseover'
+        ];
+      };
       var _getAvailableMarkerEvents = function () {
         return [
           'click',
@@ -1788,6 +1817,13 @@
           }
           if (Helpers.LabelPlugin.isLoaded() && isDefined(path.label)) {
             genLabelEvents(leafletScope, logic, path, name);
+          }
+        },
+        bindClusterEvents: function (leafletScope, logic, cluster, groupName) {
+          var clusterEvents = _getAvailableClusterEvents();
+          for (var i = 0; i < clusterEvents.length; i++) {
+            var eventName = clusterEvents[i];
+            cluster.on(eventName, genDispatchClusterEvent(leafletScope, eventName, logic, cluster, groupName));
           }
         }
       };
@@ -2531,9 +2567,10 @@
   angular.module('leaflet-directive').factory('leafletMarkersHelpers', [
     '$rootScope',
     'leafletHelpers',
+    'leafletEvents',
     '$log',
-    function ($rootScope, leafletHelpers, $log) {
-      var isDefined = leafletHelpers.isDefined, MarkerClusterPlugin = leafletHelpers.MarkerClusterPlugin, AwesomeMarkersPlugin = leafletHelpers.AwesomeMarkersPlugin, MakiMarkersPlugin = leafletHelpers.MakiMarkersPlugin, safeApply = leafletHelpers.safeApply, Helpers = leafletHelpers, isString = leafletHelpers.isString, isNumber = leafletHelpers.isNumber, isObject = leafletHelpers.isObject, groups = {};
+    function ($rootScope, leafletHelpers, leafletEvents, $log) {
+      var isDefined = leafletHelpers.isDefined, MarkerClusterPlugin = leafletHelpers.MarkerClusterPlugin, AwesomeMarkersPlugin = leafletHelpers.AwesomeMarkersPlugin, MakiMarkersPlugin = leafletHelpers.MakiMarkersPlugin, safeApply = leafletHelpers.safeApply, Helpers = leafletHelpers, isString = leafletHelpers.isString, isNumber = leafletHelpers.isNumber, isObject = leafletHelpers.isObject, groups = {}, bindClusterEvents = leafletEvents.bindClusterEvents;
       var createLeafletIcon = function (iconData) {
         if (isDefined(iconData) && isDefined(iconData.type) && iconData.type === 'awesomeMarker') {
           if (!AwesomeMarkersPlugin.isLoaded()) {
@@ -2632,7 +2669,7 @@
           }
           groups[groupName].addLayer(marker);
         },
-        addMarkerToGroupExtended: function (marker, groupName, map, clusterOptions) {
+        addMarkerToGroupExtended: function (marker, groupName, map, clusterOptions, leafletScope) {
           if (!isString(groupName)) {
             $log.error('[AngularJS - Leaflet] The marker group you have specified is invalid.');
             return;
@@ -2645,13 +2682,17 @@
             if (!isDefined(clusterOptions)) {
               clusterOptions = {};
             }
-            groups[groupName] = new L.MarkerClusterGroup(clusterOptions);
+            groups[groupName] = L.markerClusterGroup(clusterOptions);
             map.addLayer(groups[groupName]);
+            bindClusterEvents(leafletScope, 'broadcast', groups[groupName], groupName);
           }
           groups[groupName].addLayer(marker);
         },
         resetCurrentGroups: function () {
           groups = {};
+        },
+        getCurrentGroups: function () {
+          return groups;
         },
         listenMarkerEvents: function (marker, markerData, leafletScope) {
           marker.on('popupopen', function () {

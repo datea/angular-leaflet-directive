@@ -1,4 +1,4 @@
-angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($rootScope, leafletHelpers, $log) {
+angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($rootScope, leafletHelpers, leafletEvents, $log) {
 
     var isDefined = leafletHelpers.isDefined,
         MarkerClusterPlugin = leafletHelpers.MarkerClusterPlugin,
@@ -9,7 +9,9 @@ angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($
         isString = leafletHelpers.isString,
         isNumber  = leafletHelpers.isNumber,
         isObject = leafletHelpers.isObject,
-        groups = {};
+        groups = {},
+        bindClusterEvents = leafletEvents.bindClusterEvents;
+
 
     var createLeafletIcon = function(iconData) {
         if (isDefined(iconData) && isDefined(iconData.type) && iconData.type === 'awesomeMarker') {
@@ -130,7 +132,7 @@ angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($
             groups[groupName].addLayer(marker);
         },
 
-        addMarkerToGroupExtended: function(marker, groupName, map, clusterOptions) {
+        addMarkerToGroupExtended: function(marker, groupName, map, clusterOptions, leafletScope) {
             if (!isString(groupName)) {
                 $log.error('[AngularJS - Leaflet] The marker group you have specified is invalid.');
                 return;
@@ -142,8 +144,9 @@ angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($
             }
             if (!isDefined(groups[groupName])) {
                 if (!isDefined(clusterOptions)) { clusterOptions = {};}
-                groups[groupName] = new L.MarkerClusterGroup(clusterOptions);
+                groups[groupName] = L.markerClusterGroup(clusterOptions);
                 map.addLayer(groups[groupName]);
+                bindClusterEvents(leafletScope, "broadcast", groups[groupName], groupName);
             }
             groups[groupName].addLayer(marker);
         },
@@ -151,6 +154,10 @@ angular.module("leaflet-directive").factory('leafletMarkersHelpers', function ($
 
         resetCurrentGroups: function () {
             groups = {};
+        },
+
+        getCurrentGroups: function () {
+            return groups;
         },
 
         listenMarkerEvents: function(marker, markerData, leafletScope) {
